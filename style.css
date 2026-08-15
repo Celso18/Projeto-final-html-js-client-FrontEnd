@@ -1,0 +1,32 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f4f8;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+.container {
+    max-width: 700px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+h1, h2 { text-align: center; color: #1e3c72; }
+.search-box { display: flex; gap: 10px; margin-bottom: 20px; }
+input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+button { padding: 12px 20px; background: #1e3c72; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+button:hover { background: #2a5298; }
+.feedback { text-align: center; font-weight: bold; margin: 10px 0; min-height: 20px; }
+.card { background: #eef2f7; padding: 20px; border-radius: 8px; border-left: 5px solid #1e3c72; margin-bottom: 30px; }
+.hidden { display: none; }
+.btn-save { background: #28a745; width: 100%; margin-top: 10px; }
+.btn-save:hover { background: #218838; }
+.historico-lista { margin-top: 15px; }
+.item-clima { background: #fafafa; border: 1px solid #ddd; padding: 15px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+.actions { display: flex; gap: 5px; }
+.btn-delete { background: #dc3545; padding: 6px 12px; font-size: 13px; }
+.btn-delete:hover { background: #c82333; }
+.btn-edit { background: #ffc107; color: #333; padding: 6px 12px; font-size: 13px; }
+.btn-edit:hover { background: #e0a800; }

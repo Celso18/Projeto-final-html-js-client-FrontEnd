@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clima Fácil</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>☀️ Clima Fácil</h1>
+        <p>Busque o clima de qualquer cidade e salve no histórico.</p>
+
+        <!-- Seção de Busca -->
+        <div class="search-box">
+            <input type="text" id="cidadeInput" placeholder="Digite o nome da cidade (Ex: Brasília)">
+            <button onclick="buscarClima()">Buscar Clima</button>
+        </div>
+
+        <!-- Feedback Visual de Carregamento e Mensagens -->
+        <div id="feedback" class="feedback"></div>
+
+        <!-- Resultado da Busca Atual -->
+        <div id="resultadoClima" class="card hidden">
+            <h2 id="resNome">-</h2>
+            <p><strong>País:</strong> <span id="resPais">-</span></p>
+            <p><strong>Temperatura:</strong> <span id="resTemp">-</span>°C</p>
+            <p><strong>Vento:</strong> <span id="resVento">-</span> km/h</p>
+            <p><strong>Precipitação:</strong> <span id="resPrecip">-</span> mm</p>
+            <button class="btn-save" onclick="salvarNoBanco()">💾 Salvar no Histórico</button>
+        </div>
+
+        <!-- Histórico Salvo no Banco (CRUD) -->
+        <div class="historico-section">
+            <h2>📜 Consultas Salvas (Banco de Dados)</h2>
+            <button class="btn-refresh" onclick="carregarHistorico()">🔄 Atualizar Lista</button>
+            <div id="listaHistorico" class="historico-lista"></div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
