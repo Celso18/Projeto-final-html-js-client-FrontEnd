@@ -1,10 +1,4 @@
-// VARIÁVEL GLOBAL PARA GUARDAR OS DADOS ENCONTRADOS TEMPORARIAMENTE
-let climaAtualEncontrado = null;
-
-// Crie uma conta gratuita em openweathermap.org para pegar sua chave
-const API_KEY = "COLOQUE_AQUI_SUA_CHAVE_REAL_DO_OPENWEATHER"; 
-
-// 1. FUNÇÃO PARA BUSCAR CLIMA NA API PÚBLICA (Chamada na linha 17 do HTML)
+// 1. FUNÇÃO ADAPTADA PARA OPEN-METEO (Sem necessidade de API Key)
 async function buscarClima() {
     const cidade = document.getElementById("cidadeInput").value;
     const feedback = document.getElementById("feedback");
@@ -16,33 +10,44 @@ async function buscarClima() {
     }
 
     feedback.innerText = "Buscando informações...";
-    resultadoCard.classList.add("hidden"); // Esconde o card antigo enquanto busca
+    resultadoCard.classList.add("hidden");
 
     try {
-        // CORREÇÃO: URL oficial da API do OpenWeather corrigida com interrogação e parâmetros
-        const urlPublica = `https://openweathermap.org{cidade}&appid=${API_KEY}&units=metric&lang=pt_br`;
-        const resposta = await fetch(urlPublica);
+        // Passo 1: Transforma o nome da cidade em Latitude e Longitude (Geocoding)
+        const urlGeocoding = `https://open-meteo.com{encodeURIComponent(cidade)}&count=1&language=pt`;
+        const respostaGeo = await fetch(urlGeocoding);
+        const dadosGeo = await respostaGeo.json();
 
-        if (!resposta.ok) {
-            throw new Error("Cidade não encontrada ou erro na API pública. Verifique se sua API_KEY está ativa.");
+        if (!dadosGeo.results || dadosGeo.results.length === 0) {
+            throw new Error("Cidade não encontrada. Verifique a grafia.");
         }
 
-        const dados = await resposta.json();
-        
-        // Guarda os dados brutos na nossa variável global para usar na hora de salvar
-        climaAtualEncontrado = dados;
+        const local = dadosGeo.results[0];
+        const lat = local.latitude;
+        const lon = local.longitude;
 
-        // Preenche as informações nas tags <span> correspondentes do seu HTML
-        document.getElementById("resNome").innerText = dados.name;
-        document.getElementById("resPais").innerText = dados.sys.country;
-        document.getElementById("resTemp").innerText = dados.main.temp;
-        document.getElementById("resVento").innerText = dados.wind.speed;
-        
-        // Verifica se há dados de chuva, senão define como 0.0
-        const chuva = dados.rain ? (dados.rain['1h'] || dados.rain['3h'] || 0.0) : 0.0;
-        document.getElementById("resPrecip").innerText = chuva;
+        // Passo 2: Busca o clima atual usando as coordenadas encontradas
+        const urlClima = `https://open-meteo.com{lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,rain&timezone=auto`;
+        const respostaClima = await fetch(urlClima);
+        const dadosClima = await respostaClima.json();
 
-        // Limpa mensagens e mostra o card com o resultado (Remove a classe 'hidden')
+        // Passo 3: Salva os dados no formato que seu botão "Salvar" espera
+        climaAtualEncontrado = {
+            name: local.name,
+            sys: { country: local.country_code || "-" },
+            coord: { lat: lat, lon: lon },
+            main: { temp: dadosClima.current.temperature_2m },
+            wind: { speed: dadosClima.current.wind_speed_10m },
+            rain: { '1h': dadosClima.current.rain || 0.0 }
+        };
+
+        // Passo 4: Atualiza a tela (HTML)
+        document.getElementById("resNome").innerText = climaAtualEncontrado.name;
+        document.getElementById("resPais").innerText = climaAtualEncontrado.sys.country;
+        document.getElementById("resTemp").innerText = climaAtualEncontrado.main.temp;
+        document.getElementById("resVento").innerText = climaAtualEncontrado.wind.speed;
+        document.getElementById("resPrecip").innerText = climaAtualEncontrado.rain['1h'];
+
         feedback.innerText = "";
         resultadoCard.classList.remove("hidden");
 
