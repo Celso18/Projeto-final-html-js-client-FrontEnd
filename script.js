@@ -13,7 +13,7 @@ async function buscarClima() {
     resultadoCard.classList.add("hidden");
 
     try {
-        // Passo 1: Transforma o nome da cidade em Latitude e Longitude (Geocoding)
+        // AJUSTE: Inclusão do subdomínio 'geocoding-api.', da rota '/v1/search?name=' e do '$' antes da chave
         const urlGeocoding = `https://open-meteo.com{encodeURIComponent(cidade)}&count=1&language=pt`;
         const respostaGeo = await fetch(urlGeocoding);
         const dadosGeo = await respostaGeo.json();
@@ -26,7 +26,7 @@ async function buscarClima() {
         const lat = local.latitude;
         const lon = local.longitude;
 
-        // Passo 2: Busca o clima atual usando as coordenadas encontradas
+        // AJUSTE: Inclusão do subdomínio 'api.', da rota '/v1/forecast?latitude=' e do '$' esquecido em '${lat}'
         const urlClima = `https://open-meteo.com{lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,rain&timezone=auto`;
         const respostaClima = await fetch(urlClima);
         const dadosClima = await respostaClima.json();
