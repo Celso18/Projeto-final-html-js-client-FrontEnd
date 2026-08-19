@@ -1,59 +1,86 @@
-// VARIÁVEL GLOBAL PARA GUARDAR OS DADOS ENCONTRADOS TEMPORARIAMENTE
-let climaAtualEncontrado = null;
+async function buscarClima(evento) {
+    // Evita que a página recarregue ao clicar no botão
+    if (evento) evento.preventDefault();
 
-// 1. FUNÇÃO SIMPLIFICADA COM RETORNO DE TEXTO DIRETO
-async function buscarClima() {
-    const cidade = document.getElementById("cidadeInput").value;
+    const cidadeInput = document.getElementById("cidadeInput").value.trim();
     const feedback = document.getElementById("feedback");
-    const resultadoCard = document.getElementById("resultadoClima");
 
-    if (!cidade) {
-        feedback.innerText = "Por favor, digite o nome de uma cidade.";
+    if (!cidadeInput) {
+        if (feedback) {
+            feedback.innerText = "Por favor, digite o nome de uma cidade.";
+        }
         return;
     }
 
-    feedback.innerText = "Buscando informações...";
-    if (resultadoCard) resultadoCard.classList.add("hidden");
+    if (feedback) {
+        feedback.innerText = "Buscando informações...";
+    }
 
     try {
-        // CORREÇÃO: Adicionado o / e o $ antes da chave para a variável funcionar
-        const url = `https://wttr.in{encodeURIComponent(cidade)}?format=4`;
+        // 1. Busca a latitude e longitude da cidade
+        const geoUrl =
+            `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cidadeInput)}&count=1&language=pt&format=json`;
 
-        const resposta = await fetch(url);
+        const geoResposta = await fetch(geoUrl);
 
-        if (!resposta.ok) {
-            throw new Error("Não foi possível carregar os dados meteorológicos.");
+        if (!geoResposta.ok) {
+            throw new Error("Erro ao consultar a localização.");
         }
 
-        const textoPuro = await resposta.text();
+        const geoDados = await geoResposta.json();
 
-        // Se o texto contiver uma página de erro HTML da própria API
-        if (textoPuro.includes("<html") || textoPuro.includes("Unknown location")) {
+        if (!geoDados.results || geoDados.results.length === 0) {
             throw new Error("Cidade não encontrada.");
         }
 
-        // Guarda os dados simulados para não quebrar a sua função de salvar no banco Java
-        climaAtualEncontrado = {
-            name: cidade,
-            sys: { country: "BR" },
-            coord: { lat: -15.78, lon: -47.93 }, // Padrão Brasília para o banco
-            main: { temp: textoPuro.split("+")[1]?.split("°")[0] || "25" },
-            wind: { speed: "10" },
-            rain: { '1h': 0.0 }
+        // Pega o primeiro resultado
+        const primeiraCidade = geoDados.results[0];
+
+        const latitude = primeiraCidade.latitude;
+        const longitude = primeiraCidade.longitude;
+        const name = primeiraCidade.name;
+        const country = primeiraCidade.country;
+
+        // 2. Busca o clima usando latitude e longitude
+        const climaUrl =
+            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,wind_speed_10m,precipitation&timezone=auto`;
+
+        const climaResposta = await fetch(climaUrl);
+
+        if (!climaResposta.ok) {
+            throw new Error("Erro ao consultar os dados do clima.");
+        }
+
+        const climaDados = await climaResposta.json();
+
+        // 3. Organiza os dados
+        const climaAtualEncontrado = {
+            cidade: name,
+            pais: country || "Não informado",
+            temperatura: climaDados.current.temperature_2m,
+            velocidadeVento: climaDados.current.wind_speed_10m,
+            precipitacao: climaDados.current.precipitation
         };
 
-        // Alimenta o seu HTML jogando o texto direto no nome da cidade para você ver funcionar
-        document.getElementById("resNome").innerText = textoPuro;
-        document.getElementById("resPais").innerText = "-";
-        document.getElementById("resTemp").innerText = climaAtualEncontrado.main.temp;
-        document.getElementById("resVento").innerText = "-";
-        document.getElementById("resPrecip").innerText = "-";
+        console.log("Dados do Clima carregados:", climaAtualEncontrado);
 
-        feedback.innerText = "";
-        if (resultadoCard) resultadoCard.classList.remove("hidden");
+        // 4. Mostra o resultado
+        if (feedback) {
+            feedback.innerText =
+                `Clima em ${name}: ${climaAtualEncontrado.temperatura}°C`;
+        }
+
+        console.log("Cidade:", climaAtualEncontrado.cidade);
+        console.log("País:", climaAtualEncontrado.pais);
+        console.log("Temperatura:", climaAtualEncontrado.temperatura);
+        console.log("Vento:", climaAtualEncontrado.velocidadeVento);
+        console.log("Precipitação:", climaAtualEncontrado.precipitacao);
 
     } catch (erro) {
-        feedback.innerText = "Erro ao processar. Tente digitar sem acentos (Ex: Brasilia).";
-        climaAtualEncontrado = null;
+        if (feedback) {
+            feedback.innerText = `Erro: ${erro.message}`;
+        }
+
+        console.error("Detalhes do erro:", erro);
     }
 }

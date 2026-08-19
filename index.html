@@ -7,36 +7,266 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
     <div class="container">
-        <h1>☀️ Clima Fácil</h1>
-        <p>Busque o clima de qualquer cidade e salve no histórico.</p>
 
-        <!-- Seção de Busca -->
-        <div class="search-box">
-            <input type="text" id="cidadeInput" placeholder="Digite o nome da cidade (Ex: Brasília)">
-            <button onclick="buscarClima()">Buscar Clima</button>
+        <h1 class="titulo">
+            <span class="sol">☀️</span> Clima Fácil
+        </h1>
+
+        <p class="subtitulo">
+            Busque o clima de qualquer cidade e salve no histórico.
+        </p>
+
+        <!-- FORMULÁRIO DE BUSCA -->
+        <form class="busca-container" onsubmit="buscarClima(event)">
+
+            <input 
+                type="text" 
+                id="cidadeInput" 
+                placeholder="Digite o nome da cidade (Ex: Brasília)" 
+                required
+            >
+
+            <button type="submit" class="btn-busca">
+                Buscar Clima
+            </button>
+
+        </form>
+
+        <!-- TEXTO DE FEEDBACK / ERROS -->
+        <div id="feedback" class="feedback-mensagem"></div>
+
+        <!-- CARD DE EXIBIÇÃO DOS RESULTADOS -->
+        <div id="resultadoClima" class="card-resultado">
+
+            <h2 id="cardCidade">-</h2>
+
+            <p>
+                <strong>País:</strong>
+                <span id="cardPais">-</span>
+            </p>
+
+            <p>
+                <strong>Temperatura:</strong>
+                <span id="cardTemperatura">-</span> °C
+            </p>
+
+            <p>
+                <strong>Vento:</strong>
+                <span id="cardVento">-</span> km/h
+            </p>
+            
+            <button id="btnSalvar" class="btn-salvar">
+                💾 Salvar no Histórico
+            </button>
+
         </div>
 
-        <!-- Feedback Visual de Carregamento e Mensagens -->
-        <div id="feedback" class="feedback"></div>
+        <!-- SEÇÃO DO BANCO DE DADOS -->
+        <div class="historico-container">
 
-        <!-- Resultado da Busca Atual -->
-        <div id="resultadoClima" class="card hidden">
-            <h2 id="resNome">-</h2>
-            <p><strong>País:</strong> <span id="resPais">-</span></p>
-            <p><strong>Temperatura:</strong> <span id="resTemp">-</span>°C</p>
-            <p><strong>Vento:</strong> <span id="resVento">-</span> km/h</p>
-            <p><strong>Precipitação:</strong> <span id="resPrecip">-</span> mm</p>
-            <button class="btn-save" onclick="salvarNoBanco()">💾 Salvar no Histórico</button>
+            <h3>📜 Consultas Salvas (Banco de Dados)</h3>
+
+            <button id="carregarHistorico" class="btn-atualizar">
+                🔄 Atualizar Lista
+            </button>
+
         </div>
 
-        <!-- Histórico Salvo no Banco (CRUD) -->
-        <div class="historico-section">
-            <h2>📜 Consultas Salvas (Banco de Dados)</h2>
-            <button class="btn-refresh" onclick="carregarHistorico()">🔄 Atualizar Lista</button>
-            <div id="listaHistorico" class="historico-lista"></div>
-        </div>
     </div>
-    <script src="script.js"></script>
+
+    <script>
+
+    // Guarda os dados encontrados temporariamente
+    let climaAtualEncontrado = null;
+
+
+    async function buscarClima(evento) {
+
+        // Evita que a página recarregue
+        if (evento) {
+            evento.preventDefault();
+        }
+
+        const cidadeInput = document
+            .getElementById("cidadeInput")
+            .value
+            .trim();
+
+        const feedback = document.getElementById("feedback");
+
+
+        // Verifica se o usuário digitou alguma coisa
+        if (!cidadeInput) {
+
+            feedback.innerText =
+                "Por favor, digite o nome de uma cidade.";
+
+            return;
+        }
+
+
+        feedback.innerText =
+            "Buscando informações...";
+
+
+        try {
+
+            // =====================================================
+            // 1. BUSCAR A CIDADE
+            // =====================================================
+
+            const geoUrl =
+                `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cidadeInput)}&count=1&language=pt&format=json`;
+
+
+            const geoResposta = await fetch(geoUrl);
+
+
+            if (!geoResposta.ok) {
+                throw new Error(
+                    "Erro ao consultar a cidade."
+                );
+            }
+
+
+            const geoDados = await geoResposta.json();
+
+
+            // Verifica se encontrou a cidade
+            if (
+                !geoDados.results ||
+                geoDados.results.length === 0
+            ) {
+
+                throw new Error(
+                    "Cidade não encontrada."
+                );
+            }
+
+
+            // Pega o primeiro resultado
+            const primeiraCidade =
+                geoDados.results[0];
+
+
+            const latitude =
+                primeiraCidade.latitude;
+
+            const longitude =
+                primeiraCidade.longitude;
+
+            const name =
+                primeiraCidade.name;
+
+            const country =
+                primeiraCidade.country;
+
+
+            console.log("Cidade encontrada:");
+            console.log(name);
+            console.log("Latitude:", latitude);
+            console.log("Longitude:", longitude);
+
+
+            // =====================================================
+            // 2. BUSCAR O CLIMA
+            // =====================================================
+
+            const climaUrl =
+                `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,wind_speed_10m&timezone=auto`;
+
+
+            console.log("URL do clima:", climaUrl);
+
+
+            const climaResposta =
+                await fetch(climaUrl);
+
+
+            if (!climaResposta.ok) {
+
+                throw new Error(
+                    "Erro ao consultar o clima."
+                );
+            }
+
+
+            const climaDados =
+                await climaResposta.json();
+
+
+            console.log("Dados recebidos:", climaDados);
+
+
+            // =====================================================
+            // 3. ORGANIZAR OS DADOS
+            // =====================================================
+
+            climaAtualEncontrado = {
+
+                cidade: name,
+
+                pais: country || "Não informado",
+
+                temperatura:
+                    climaDados.current.temperature_2m,
+
+                velocidadeVento:
+                    climaDados.current.wind_speed_10m
+
+            };
+
+
+            console.log(
+                "Dados do Clima:",
+                climaAtualEncontrado
+            );
+
+
+            // =====================================================
+            // 4. MOSTRAR NO HTML
+            // =====================================================
+
+            document.getElementById("cardCidade").innerText =
+                climaAtualEncontrado.cidade;
+
+
+            document.getElementById("cardPais").innerText =
+                climaAtualEncontrado.pais;
+
+
+            document.getElementById("cardTemperatura").innerText =
+                climaAtualEncontrado.temperatura;
+
+
+            document.getElementById("cardVento").innerText =
+                climaAtualEncontrado.velocidadeVento;
+
+
+            // Mensagem de sucesso
+            feedback.innerText =
+                "Dados carregados com sucesso!";
+
+        }
+
+
+        catch (erro) {
+
+            feedback.innerText =
+                `Erro: ${erro.message}`;
+
+            console.error(
+                "Detalhes do erro:",
+                erro
+            );
+
+        }
+
+    }
+
+    </script>
+
 </body>
 </html>
